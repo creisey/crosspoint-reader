@@ -1,5 +1,7 @@
 #include "SdCardFontSystem.h"
 
+#include <algorithm>
+#include <cctype>
 #include <GfxRenderer.h>
 #include <Logging.h>
 
@@ -11,6 +13,21 @@ static uint8_t fontSizeEnumFromSettings() {
   return e;
 }
 
+static bool isBookerlyFamilyName(const std::string& familyName) {
+  std::string lowerCase = familyName;
+  std::transform(lowerCase.begin(), lowerCase.end(), lowerCase.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return lowerCase.find("bookerly") != std::string::npos;
+}
+
+static const SdCardFontFamilyInfo* findBookerlyFamily(const SdCardFontRegistry& registry) {
+  for (const auto& family : registry.getFamilies()) {
+    if (isBookerlyFamilyName(family.name)) {
+      return &family;
+    }
+  }
+  return nullptr;
+}
+
 void SdCardFontSystem::begin(GfxRenderer& renderer) {
   registry_.discover();
 
@@ -20,6 +37,16 @@ void SdCardFontSystem::begin(GfxRenderer& renderer) {
     return static_cast<SdCardFontSystem*>(ctx)->resolveFontId(familyName, fontSizeEnum);
   };
   SETTINGS.sdFontResolverCtx = this;
+
+  // Auto-select Bookerly if available and no SD font is already configured.
+  if (SETTINGS.sdFontFamilyName[0] == '\0') {
+    const auto* bookerlyFamily = findBookerlyFamily(registry_);
+    if (bookerlyFamily != nullptr) {
+      strncpy(SETTINGS.sdFontFamilyName, bookerlyFamily->name.c_str(), sizeof(SETTINGS.sdFontFamilyName) - 1);
+      SETTINGS.sdFontFamilyName[sizeof(SETTINGS.sdFontFamilyName) - 1] = '\0';
+      LOG_DBG("SDFS", "Auto-selected Bookerly SD font family: %s", SETTINGS.sdFontFamilyName);
+    }
+  }
 
   // If user has a saved SD font selection, load it
   if (SETTINGS.sdFontFamilyName[0] != '\0') {

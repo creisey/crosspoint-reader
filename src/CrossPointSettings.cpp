@@ -5,6 +5,8 @@
 #include <Logging.h>
 #include <Serialization.h>
 
+#include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <string>
 
@@ -31,6 +33,13 @@ constexpr char LANG_FILE_BIN[] = "/.crosspoint/language.bin";
 constexpr char LANG_FILE_BAK[] = "/.crosspoint/language.bin.bak";
 
 // Convert legacy front button layout into explicit logical->hardware mapping.
+bool containsBookerlyName(const char* familyName) {
+  if (familyName == nullptr) return false;
+  std::string lowerFamily(familyName);
+  std::transform(lowerFamily.begin(), lowerFamily.end(), lowerFamily.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  return lowerFamily.find("bookerly") != std::string::npos;
+}
+
 void applyLegacyFrontButtonLayout(CrossPointSettings& settings) {
   switch (static_cast<CrossPointSettings::FRONT_BUTTON_LAYOUT>(settings.frontButtonLayout)) {
     case CrossPointSettings::LEFT_RIGHT_BACK_CONFIRM:
@@ -58,6 +67,22 @@ void applyLegacyFrontButtonLayout(CrossPointSettings& settings) {
       settings.frontButtonLeft = CrossPointSettings::FRONT_HW_LEFT;
       settings.frontButtonRight = CrossPointSettings::FRONT_HW_RIGHT;
       break;
+  }
+}
+
+
+void sanitizeLoadedSettings(CrossPointSettings& settings) {
+  if (settings.language != 0) {
+    settings.language = 0;
+  }
+  if (settings.imageRendering != CrossPointSettings::IMAGES_SUPPRESS) {
+    settings.imageRendering = CrossPointSettings::IMAGES_SUPPRESS;
+  }
+  if (settings.fontFamily != CrossPointSettings::NOTOSERIF) {
+    settings.fontFamily = CrossPointSettings::NOTOSERIF;
+  }
+  if (settings.sdFontFamilyName[0] != '\0' && !containsBookerlyName(settings.sdFontFamilyName)) {
+    settings.sdFontFamilyName[0] = '\0';
   }
 }
 
@@ -115,6 +140,13 @@ bool CrossPointSettings::loadFromFile() {
         }
       }
       migrateLanguageBinaryFile();
+      const bool sanitized = [&]() {
+        sanitizeLoadedSettings(*this);
+        return saveToFile();
+      }();
+      if (!sanitized) {
+        LOG_ERR("CPS", "Failed to save sanitized settings");
+      }
       return result;
     }
   }
@@ -123,6 +155,7 @@ bool CrossPointSettings::loadFromFile() {
   if (Storage.exists(SETTINGS_FILE_BIN)) {
     if (loadFromBinaryFile()) {
       migrateLanguageBinaryFile();
+      sanitizeLoadedSettings(*this);
       if (saveToFile()) {
         Storage.rename(SETTINGS_FILE_BIN, SETTINGS_FILE_BAK);
         LOG_DBG("CPS", "Migrated settings.bin to settings.json");
@@ -135,7 +168,14 @@ bool CrossPointSettings::loadFromFile() {
   }
 
   // No settings files at all -- check for standalone language.bin
-  return migrateLanguageBinaryFile();
+  if (migrateLanguageBinaryFile()) {
+    sanitizeLoadedSettings(*this);
+    if (!saveToFile()) {
+      LOG_ERR("CPS", "Failed to save sanitized settings after language migration");
+    }
+    return true;
+  }
+  return false;
 }
 
 bool CrossPointSettings::migrateLanguageBinaryFile() {

@@ -24,6 +24,7 @@ void Lyra3CoversTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, con
   const int tileWidth = (rect.width - 2 * Lyra3CoversMetrics::values.contentSidePadding) / 3;
   const int tileY = rect.y;
   const bool hasContinueReading = !recentBooks.empty();
+  const bool imagesDisabled = SETTINGS.imageRendering == CrossPointSettings::IMAGES_SUPPRESS;
 
   // Draw book card regardless, fill with message based on `hasContinueReading`
   // Draw cover image as background if available (inside the box)
@@ -35,7 +36,7 @@ void Lyra3CoversTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, con
         std::string coverPath = recentBooks[i].coverBmpPath;
         bool hasCover = true;
         int tileX = Lyra3CoversMetrics::values.contentSidePadding + tileWidth * i;
-        if (coverPath.empty()) {
+        if (coverPath.empty() || imagesDisabled) {
           hasCover = false;
         } else {
           const std::string coverBmpPath =

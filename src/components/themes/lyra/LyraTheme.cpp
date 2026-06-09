@@ -412,6 +412,7 @@ void LyraTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, const std:
   const int tileHeight = rect.height;
   const int tileY = rect.y;
   const bool hasContinueReading = !recentBooks.empty();
+  const bool imagesDisabled = SETTINGS.imageRendering == CrossPointSettings::IMAGES_SUPPRESS;
   if (coverWidth == 0) {
     coverWidth = LyraMetrics::values.homeCoverHeight * 0.6;
   }
@@ -425,7 +426,7 @@ void LyraTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, const std:
       std::string coverPath = book.coverBmpPath;
       bool hasCover = true;
       int tileX = LyraMetrics::values.contentSidePadding;
-      if (coverPath.empty()) {
+      if (coverPath.empty() || imagesDisabled) {
         hasCover = false;
       } else {
         const std::string coverBmpPath = UITheme::getCoverThumbPath(coverPath, LyraMetrics::values.homeCoverHeight);

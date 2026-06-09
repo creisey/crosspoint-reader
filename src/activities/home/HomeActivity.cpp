@@ -52,6 +52,13 @@ void HomeActivity::loadRecentBooks(int maxBooks) {
 }
 
 void HomeActivity::loadRecentCovers(int coverHeight) {
+  // Skip loading covers if images are disabled globally
+  if (SETTINGS.imageRendering == CrossPointSettings::IMAGES_SUPPRESS) {
+    recentsLoaded = true;
+    recentsLoading = false;
+    return;
+  }
+
   recentsLoading = true;
   bool showingLoading = false;
   Rect popupRect;

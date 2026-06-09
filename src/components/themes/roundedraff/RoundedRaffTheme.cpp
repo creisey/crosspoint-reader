@@ -119,6 +119,7 @@ void RoundedRaffTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, con
   const int tileHeight = rect.height;
   const int tileY = rect.y;
   const bool hasContinueReading = !recentBooks.empty();
+  const bool imagesDisabled = SETTINGS.imageRendering == CrossPointSettings::IMAGES_SUPPRESS;
   if (coverWidth == 0) {
     coverWidth = RoundedRaffMetrics::values.homeCoverHeight * 0.6;
   }
@@ -133,7 +134,7 @@ void RoundedRaffTheme::drawRecentBookCover(GfxRenderer& renderer, Rect rect, con
     if (!coverRendered) {
       std::string coverPath = book.coverBmpPath;
       bool hasCover = true;
-      if (coverPath.empty()) {
+      if (coverPath.empty() || imagesDisabled) {
         hasCover = false;
       } else {
         const std::string coverBmpPath =

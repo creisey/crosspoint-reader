@@ -18,7 +18,7 @@
 // are appended after the built-in fonts. Otherwise only built-in fonts are listed.
 inline SettingInfo buildFontFamilySetting(const SdCardFontRegistry* registry) {
   // Built-in font labels (StrId)
-  std::vector<StrId> enumValues = {StrId::STR_NOTO_SERIF, StrId::STR_NOTO_SANS};
+  std::vector<StrId> enumValues = {StrId::STR_NOTO_SERIF, StrId::STR_NOTO_SANS, StrId::STR_BOOKERLY};
   // Runtime string labels for SD card fonts
   std::vector<std::string> enumStringValues;
 
@@ -41,6 +41,7 @@ inline SettingInfo buildFontFamilySetting(const SdCardFontRegistry* registry) {
   if (sdFontCount > 0) {
     allStringValues.push_back(I18N.get(StrId::STR_NOTO_SERIF));
     allStringValues.push_back(I18N.get(StrId::STR_NOTO_SANS));
+    allStringValues.push_back(I18N.get(StrId::STR_BOOKERLY));
     allStringValues.insert(allStringValues.end(), enumStringValues.begin(), enumStringValues.end());
   }
 
@@ -61,6 +62,9 @@ inline SettingInfo buildFontFamilySetting(const SdCardFontRegistry* registry) {
                    [](const SdCardFontFamilyInfo& f) { return f.name; });
   }
 
+  static const uint8_t builtInFamilyMap[] = {CrossPointSettings::NOTOSERIF, CrossPointSettings::NOTOSANS,
+                                               CrossPointSettings::BOOKERLY};
+
   s.valueGetter = [sdFamilyNames]() -> uint8_t {
     // If an SD card font is selected, find its index
     if (SETTINGS.sdFontFamilyName[0] != '\0') {
@@ -71,12 +75,18 @@ inline SettingInfo buildFontFamilySetting(const SdCardFontRegistry* registry) {
       }
       // SD font name not found in registry — fall through to built-in
     }
-    return SETTINGS.fontFamily < CrossPointSettings::BUILTIN_FONT_COUNT ? SETTINGS.fontFamily : 0;
+
+    for (uint8_t i = 0; i < CrossPointSettings::BUILTIN_FONT_COUNT; ++i) {
+      if (SETTINGS.fontFamily == builtInFamilyMap[i]) {
+        return i;
+      }
+    }
+    return 0;
   };
 
   s.valueSetter = [sdFamilyNames](uint8_t v) {
     if (v < CrossPointSettings::BUILTIN_FONT_COUNT) {
-      SETTINGS.fontFamily = v;
+      SETTINGS.fontFamily = builtInFamilyMap[v];
       SETTINGS.sdFontFamilyName[0] = '\0';
     } else {
       int sdIdx = v - CrossPointSettings::BUILTIN_FONT_COUNT;

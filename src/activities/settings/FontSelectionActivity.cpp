@@ -21,6 +21,7 @@ void FontSelectionActivity::onEnter() {
 
   fonts_.push_back({I18N.get(StrId::STR_NOTO_SERIF), true, 0});
   fonts_.push_back({I18N.get(StrId::STR_NOTO_SANS), true, 1});
+  fonts_.push_back({I18N.get(StrId::STR_BOOKERLY), true, 2});
 
   if (registry_) {
     const auto& families = registry_->getFamilies();
@@ -40,7 +41,20 @@ void FontSelectionActivity::onEnter() {
       }
     }
   } else {
-    selectedIndex_ = SETTINGS.fontFamily < CrossPointSettings::BUILTIN_FONT_COUNT ? SETTINGS.fontFamily : 0;
+    switch (SETTINGS.fontFamily) {
+      case CrossPointSettings::NOTOSERIF:
+        selectedIndex_ = 0;
+        break;
+      case CrossPointSettings::NOTOSANS:
+        selectedIndex_ = 1;
+        break;
+      case CrossPointSettings::BOOKERLY:
+        selectedIndex_ = 2;
+        break;
+      default:
+        selectedIndex_ = 0;
+        break;
+    }
   }
 
   requestUpdate();
@@ -86,7 +100,20 @@ void FontSelectionActivity::loop() {
 void FontSelectionActivity::handleSelection() {
   const auto& font = fonts_[selectedIndex_];
   if (font.settingIndex < CrossPointSettings::BUILTIN_FONT_COUNT) {
-    SETTINGS.fontFamily = font.settingIndex;
+    switch (font.settingIndex) {
+      case 0:
+        SETTINGS.fontFamily = CrossPointSettings::NOTOSERIF;
+        break;
+      case 1:
+        SETTINGS.fontFamily = CrossPointSettings::NOTOSANS;
+        break;
+      case 2:
+        SETTINGS.fontFamily = CrossPointSettings::BOOKERLY;
+        break;
+      default:
+        SETTINGS.fontFamily = CrossPointSettings::NOTOSERIF;
+        break;
+    }
     SETTINGS.sdFontFamilyName[0] = '\0';
   } else if (registry_) {
     int sdIdx = font.settingIndex - CrossPointSettings::BUILTIN_FONT_COUNT;
@@ -122,7 +149,20 @@ void FontSelectionActivity::render(RenderLock&&) {
       }
     }
   } else {
-    currentFontIndex = SETTINGS.fontFamily < CrossPointSettings::BUILTIN_FONT_COUNT ? SETTINGS.fontFamily : 0;
+    switch (SETTINGS.fontFamily) {
+      case CrossPointSettings::NOTOSERIF:
+        currentFontIndex = 0;
+        break;
+      case CrossPointSettings::NOTOSANS:
+        currentFontIndex = 1;
+        break;
+      case CrossPointSettings::BOOKERLY:
+        currentFontIndex = 2;
+        break;
+      default:
+        currentFontIndex = 0;
+        break;
+    }
   }
 
   GUI.drawList(

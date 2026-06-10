@@ -78,8 +78,8 @@ void sanitizeLoadedSettings(CrossPointSettings& settings) {
   if (settings.imageRendering != CrossPointSettings::IMAGES_SUPPRESS) {
     settings.imageRendering = CrossPointSettings::IMAGES_SUPPRESS;
   }
-  if (settings.fontFamily != CrossPointSettings::NOTOSERIF) {
-    settings.fontFamily = CrossPointSettings::NOTOSERIF;
+  if (settings.fontFamily >= CrossPointSettings::FONT_FAMILY_COUNT) {
+    settings.fontFamily = CrossPointSettings::BOOKERLY;
   }
   if (settings.sdFontFamilyName[0] != '\0' && !containsBookerlyName(settings.sdFontFamilyName)) {
     settings.sdFontFamilyName[0] = '\0';
@@ -358,6 +358,17 @@ float CrossPointSettings::getReaderLineCompression() const {
         case WIDE:
           return 1.0f;
       }
+    case BOOKERLY:
+    case LEGACY_OPENDYSLEXIC:
+      switch (lineSpacing) {
+        case TIGHT:
+          return 0.95f;
+        case NORMAL:
+        default:
+          return 1.0f;
+        case WIDE:
+          return 1.1f;
+      }
   }
 }
 
@@ -417,6 +428,30 @@ int CrossPointSettings::getReaderFontId() const {
           return NOTOSANS_16_FONT_ID;
         case EXTRA_LARGE:
           return NOTOSANS_18_FONT_ID;
+      }
+    case BOOKERLY:
+      switch (fontSize) {
+        case SMALL:
+          return BOOKERLY_12_FONT_ID;
+        case MEDIUM:
+        default:
+          return BOOKERLY_14_FONT_ID;
+        case LARGE:
+          return BOOKERLY_16_FONT_ID;
+        case EXTRA_LARGE:
+          return BOOKERLY_18_FONT_ID;
+      }
+    case LEGACY_OPENDYSLEXIC:
+      switch (fontSize) {
+        case SMALL:
+          return NOTOSERIF_12_FONT_ID;
+        case MEDIUM:
+        default:
+          return NOTOSERIF_14_FONT_ID;
+        case LARGE:
+          return NOTOSERIF_16_FONT_ID;
+        case EXTRA_LARGE:
+          return NOTOSERIF_18_FONT_ID;
       }
   }
 }
